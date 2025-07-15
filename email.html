@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Email Filtering Simulation</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar {
+      height: 100vh;
+      background-color: #f8f9fa;
+      padding-top: 1rem;
+    }
+    .sidebar a {
+      display: block;
+      padding: 0.75rem 1.25rem;
+      color: #333;
+      text-decoration: none;
+    }
+    .sidebar a:hover {
+      background-color: #e9ecef;
+    }
+    .email-box {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .sidebar a.active,
+    .sidebar a.active-junk {
+      background-color: #f8d7da;
+      font-weight: bold;
+      color: #842029;
+    }
+    a code {
+      color: #d63384;
+      text-decoration: none;
+    }
+    a code:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+<div class="d-flex">
+  <nav class="sidebar col-2 border-end">
+    <h5 class="text-center mb-4">📋 Modules</h5>
+    <a href="index.html">🏠 Dashboard</a>
+    <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#emailSubmenu" role="button" aria-expanded="true">
+      📧 Email
+      <i class="bi bi-caret-down-fill small"></i>
+    </a>
+    <div class="collapse show ms-3" id="emailSubmenu">
+      <a href="#" id="link-inbox" onclick="showInbox()">📥 Inbox</a>
+      <a href="#" id="link-junk" onclick="showJunk()">🗑 Junk</a>
+    </div>
+    <a id="trainingLink" href="#">🎓 Training</a>
+    <a id="incidentLink" href="#" onclick="showModule('module-incident')">🚨 Incident Response</a>
+    <hr>
+    <button class="btn btn-outline-danger ms-3 me-3 mt-2" onclick="resetStorage()">🔄 Reset Email Data</button>
+  </nav>
+
+  <main class="col-10 p-4 overflow-auto">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 id="emailTitle">📧 Email</h4>
+      <!-- <a href="index.html" class="btn btn-outline-secondary btn-sm">🔙 Back to Dashboard</a> -->
+    </div>
+    <div id="emailContainer"></div>
+  </main>
+</div>
+
+<!-- Modal: New Email Detected -->
+<div class="modal fade" id="modalNewEmail" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">📥 New Email Detected</h5></div>
+      <div class="modal-body">A new email has arrived. Would you like to automatically scan all emails for threats?</div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary me-2" data-bs-dismiss="modal" onclick="confirmSkip()">No</button>
+        <button class="btn btn-primary" onclick="startScan()">Yes, Scan Now</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Confirm Skip -->
+<div class="modal fade" id="modalConfirmSkip" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">⚠️ Are you sure?</h5></div>
+      <div class="modal-body">
+        Skipping scanning may put your system at risk.
+        <div class="form-check mt-2">
+          <input class="form-check-input" type="checkbox" id="noReminderToday">
+          <label class="form-check-label" for="noReminderToday">Don't show again today</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary me-2" data-bs-dismiss="modal" onclick="reopenNewModal()">Go Back</button>
+        <button class="btn btn-danger" data-bs-dismiss="modal">Yes, skip anyway</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Scanning -->
+<div class="modal fade" id="modalScanning" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center">
+      <div class="modal-body">
+        <h5>🔍 Scanning emails for suspicious content...</h5>
+        <div class="progress mt-3">
+          <div class="progress-bar progress-bar-striped progress-bar-animated" id="scanBar" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Suspicious Detected -->
+<div class="modal fade" id="modalSuspicious" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-body">
+        <h5>⚠️ Suspicious email detected.</h5>
+        <div id="suspicious-detail" class="mt-3"></div>
+        <div class="mt-3 d-flex justify-content-between">
+          <button class="btn btn-danger me-2" onclick="reportEmail()">Report & Move to Junk</button>
+          <button class="btn btn-outline-secondary" onclick="confirmTrust()">Trust this email</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Trust Confirmation -->
+<div class="modal fade" id="modalTrustConfirm" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-body">
+        These emails differ from your usual communication patterns.<br>
+        Are you sure you want to trust them?
+        <div class="mt-3 d-flex justify-content-between">
+          <button class="btn btn-danger me-2" onclick="reportEmail()" data-bs-dismiss="modal">Report & Move to Junk</button>
+          <button class="btn btn-success" data-bs-dismiss="modal">Yes, trust anyway</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: All Safe -->
+<div class="modal fade" id="modalSafe" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content text-center">
+      <div class="modal-body">
+        <h5 class="text-success">✅ This email is safe</h5>
+        <button class="btn btn-success mt-3" data-bs-dismiss="modal" onclick="markAsHandled()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Phishing Click Warning -->
+<div class="modal fade" id="modalPhishingClick" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title text-dark">🚨 Simulated Phishing Detected</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>This email was part of a cybersecurity training exercise.</p>
+        <p><strong>You interacted with suspicious content!</strong></p>
+        <p>Don't worry, no real harm was done. But this shows how easily phishing can succeed.</p>
+        <p>👉You will be redirected to a short online training to strengthen your awareness.</p>
+      </div>
+      <div class="modal-footer">
+        <a id="trainingRedirectLink" href="#" class="btn btn-primary">📘 Go to Training</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+
+  var inboxEmails = [];
+  const reported = JSON.parse(localStorage.getItem("reportedEmails") || "[]");
+
+  var scannedEmails = JSON.parse(localStorage.getItem("scannedEmails") || "[]");
+
+  const handled = JSON.parse(localStorage.getItem("handledEmails") || "[]");
+
+  if (!handled.includes("phish001")) {
+    inboxEmails = [{
+      id: "phish001",
+      from: "it-support@feather-security.com",
+      subject: "[ACTION REQUIRED] MFA Reset Request for Your Account",
+      attachment: "security_update.pdf",
+      reason: "Domain mismatch and social engineering language detected",
+      link: "https://feather-secure.com/auth-reset",
+      body: `Dear FeatherDrive Team,
+              We detected a security anomaly during your recent login. As a precaution, we’ve temporarily disabled multi-factor authentication (MFA) on your account.
+              To restore full access, please confirm your identity and reset MFA via the secure link below.
+              If you do not complete this process within 24 hours, you may be locked out of your dashboard.
+              FeatherDrive Security Team`,
+    }];
+  } else if (!handled.includes("safe001")) {
+    inboxEmails = [{
+      id: "safe001",
+      from: "hr@feather.com",
+      subject: "🎉 End-of-year lunch reminder",
+      attachment: "menu.pdf",
+      reason: "None",
+      body: "Hi team, just a reminder. Please let us know if you're coming to Friday’s lunch at 12PM.",
+      link: "http://intranet.feather.com/lunch"
+    }];
+  } else {
+    inboxEmails = [];
+  }
+
+  var junkEmails = [];
+    function renderEmails(list, boxType = "inbox") {
+        const container = document.getElementById("emailContainer");
+        container.innerHTML = "";
+
+        if (list.length === 0) {
+          container.innerHTML = `<div class="alert alert-info">There are currently no emails in this folder.</div>`;
+          return;
+        }
+
+        list.forEach(email => {
+        const actionButton = boxType === "junk"
+            ? `<button class="btn btn-sm btn-outline-danger" onclick="placeholderReport('${email.id}')">📝 Report this email</button>`
+            : `<button class="btn btn-sm btn-outline-primary" onclick="scanSingleEmail('${email.id}')">🔍 Scan this email</button>`;
+
+        const safeMenuUrl = "https://marurestaurant.com.au/wp-content/uploads/2024/04/KakaoTalk_20240415_151324106_02.png";
+        const displayUrl = email.link;
+        const targetUrl = email.id === "safe001" ? safeMenuUrl : email.link;
+        const attachmentHTML =
+        email.id === "phish001"
+          ? `<a href="javascript:void(0)" onclick="handleAttachmentClick('${email.id}')" style="text-decoration: none;"><code style="color: #d63384;">${email.attachment}</code></a>`
+          : `<a href="${safeMenuUrl}" target="_blank" style="text-decoration: none;"><code style="color: #d63384;">${email.attachment}</code></a>`;
+          
+        container.innerHTML += `
+          <div class="email-box">
+            <strong>From:</strong> ${email.from}<br>
+            <strong>Subject:</strong> ${email.subject}<br><br>
+            ${email.body}<br><br>
+            Link: <a href="javascript:void(0)" onclick="handleMenuClick('${email.id}', '${targetUrl}')">${displayUrl}</a><br>
+            Attachment: ${attachmentHTML}<br>
+            <div class="text-end mt-3">${actionButton}</div>
+          </div>
+        `;
+        });
+    }
+
+    function showInbox() {
+        renderEmails(inboxEmails, "inbox");
+        document.getElementById("link-inbox").classList.add("active");
+        document.getElementById("link-junk").classList.remove("active", "active-junk");
+        document.getElementById("emailTitle").textContent = "📧 Email - Inbox";
+    }
+
+    function showJunk() {
+        renderEmails(junkEmails, "junk");
+        document.getElementById("link-inbox").classList.remove("active");
+        document.getElementById("link-junk").classList.add("active", "active-junk");
+        document.getElementById("emailTitle").textContent = "📧 Email - Junk";
+    }
+
+    function markAsHandled() {
+    const email = inboxEmails[0];
+      if (email) {
+        let handled = JSON.parse(localStorage.getItem("handledEmails") || "[]");
+        if (!handled.includes(email.id)) {
+          handled.push(email.id);
+          localStorage.setItem("handledEmails", JSON.stringify(handled));
+        }
+      }
+    }
+
+    window.onload = () => {
+        junkEmails = JSON.parse(localStorage.getItem("junkEmails") || "[]");
+
+        const reported = JSON.parse(localStorage.getItem("reportedEmails") || "[]");
+        scannedEmails = JSON.parse(localStorage.getItem("scannedEmails") || "[]");
+
+        if (reported.includes("phish001")) {
+            inboxEmails = [{
+                id: "safe001",
+                from: "hr@feather.com",
+                subject: "🎉 Middle-of-year lunch reminder",
+                attachment: "menu.pdf",
+                reason: "None",
+                link: "http://intranet.feather.com/lunch",
+                body: `Hi team,
+                      <br>
+                      <br>
+                      We’re having our team lunch this Friday at 12PM at Maru Korean Restaurant
+                      <br>
+                      📍 157 Elizabeth St, Brisbane City QLD 4000
+                      <br>
+                      <br>
+                      Please reply if you’ll be joining, and click below to check the menu.`,
+
+            }];
+        } else {
+            inboxEmails = [{
+                id: "phish001",
+                from: "it-support@feather-security.com",
+                subject: "[ACTION REQUIRED] MFA Reset Request for Your Account",
+                attachment: "security_update.pdf",
+                reason: "Domain mismatch and social engineering language detected",
+                link: "https://feather-secure.com/auth-reset",
+                body: `Dear FeatherDrive Team,
+                      <br>
+                      <br>
+                      We detected a security anomaly during your recent login.
+                      <br>
+                      As a precaution, we’ve temporarily disabled multi-factor authentication (MFA) on your account.
+                      <br>
+                      <br>
+                      To restore full access, please confirm your identity and reset MFA via the secure link below.
+                      <br>
+                      If you do not complete this process within 24 hours, you may be locked out of your dashboard.
+                      <br>
+                      <br>
+                      FeatherDrive Security Team`,
+            }];
+        }
+
+        showInbox();
+
+        const handledEmails = JSON.parse(localStorage.getItem("handledEmails") || "[]");
+
+        if (inboxEmails.length > 0 && !handledEmails.includes(inboxEmails[0].id)) {
+            new bootstrap.Modal(document.getElementById('modalNewEmail')).show();
+        }
+    };
+
+  function confirmSkip() {
+    bootstrap.Modal.getInstance(document.getElementById('modalNewEmail')).hide();
+    new bootstrap.Modal(document.getElementById('modalConfirmSkip')).show();
+
+    const email = inboxEmails[0];
+    let handled = JSON.parse(localStorage.getItem("handledEmails") || "[]");
+
+    if (email && !handled.includes(email.id)) {
+      handled.push(email.id);
+      localStorage.setItem("handledEmails", JSON.stringify(handled));
+    }
+  }
+
+  function reopenNewModal() {
+    bootstrap.Modal.getInstance(document.getElementById('modalConfirmSkip'))?.hide();
+    new bootstrap.Modal(document.getElementById('modalNewEmail')).show();
+  }
+
+  function startScan() {
+    bootstrap.Modal.getInstance(document.getElementById('modalNewEmail'))?.hide();
+    const scanModal = new bootstrap.Modal(document.getElementById('modalScanning'));
+    scanModal.show();
+
+    let progress = 0;
+    const bar = document.getElementById('scanBar');
+    const interval = setInterval(() => {
+      progress += 10;
+      bar.style.width = progress + "%";
+      if (progress >= 100) {
+        clearInterval(interval);
+        scanModal.hide();
+        const email = inboxEmails[0];
+
+        if (email.id === "safe001") {
+        new bootstrap.Modal(document.getElementById("modalSafe")).show();
+      } else {
+        const container = document.getElementById("suspicious-detail");
+        container.innerHTML = `
+          <div class="small">
+            <div class="mb-2"><strong>Subject:</strong><br>${email.subject}</div>
+            <div class="mb-2"><strong>From:</strong><br>${email.from}</div>
+            <div class="mb-2"><strong>Header Analysis:</strong><br>
+              Domain closely resembles official domain <br>
+              <code>feather.com</code> vs <code>feather-security.com</code>
+            </div>
+            <div class="mb-2"><strong>Body Analysis:</strong><br>
+              Urgency-based language detected:
+              <br>“locked out”, “confirm identity”, “within 24 hours”
+            </div>
+            <div class="mb-2"><strong>Attachment:</strong><br><code>${email.attachment}</code></div>
+            <div class="mb-2"><strong>URL Analysis:</strong><br>
+              Link appears similar to legitimate domain:
+              <br><code>${email.link}</code>
+            </div>
+            <div class="mb-2">
+              <strong>Phishing Probability:</strong>
+              <br><span class="text-danger fw-bold fs-5">87%</span>
+            </div>
+          </div>
+        `;
+        new bootstrap.Modal(document.getElementById('modalSuspicious')).show();
+      }
+      }
+    }, 300);
+
+    let handled = JSON.parse(localStorage.getItem("handledEmails") || "[]");
+    if (!handled.includes(email.id)) {
+      handled.push(email.id);
+      localStorage.setItem("handledEmails", JSON.stringify(handled));
+    }
+  }
+
+  function confirmTrust() {
+    bootstrap.Modal.getInstance(document.getElementById('modalSuspicious'))?.hide();
+    new bootstrap.Modal(document.getElementById('modalTrustConfirm')).show();
+  }
+
+    function reportEmail() {
+        const email = inboxEmails.shift();
+
+        if (!junkEmails.some(e => e.id === email.id)) {
+            junkEmails.push(email);
+        }
+
+        let handled = JSON.parse(localStorage.getItem("handledEmails") || "[]");
+        if (!handled.includes(email.id)) {
+            handled.push(email.id);
+            localStorage.setItem("handledEmails", JSON.stringify(handled));
+        }
+
+        localStorage.setItem("junkEmails", JSON.stringify(junkEmails));
+        localStorage.setItem("reportedEmails", JSON.stringify(["phish001"]));
+
+        showJunk();
+        bootstrap.Modal.getInstance(document.getElementById('modalSuspicious'))?.hide();
+
+        alert("Please complete the incident report form with relevant details. Your report will be reviewed by the IT team.");
+        localStorage.setItem("incidentTab", "form");
+        window.location.href = "incident_report.html";
+    }
+
+
+    document.getElementById('noReminderToday')?.addEventListener('change', function () {
+        if (this.checked) {
+            localStorage.setItem("no-remind-today", "true");
+        } else {
+            localStorage.removeItem("no-remind-today");
+        }
+    });
+
+    function resetStorage() {
+        localStorage.removeItem("handledEmails");
+        localStorage.removeItem("processedEmails");
+        localStorage.removeItem("reportedEmails");
+        localStorage.removeItem("scannedEmails");
+        localStorage.removeItem("junkEmails");
+        localStorage.removeItem("no-remind-today");
+        alert("✅ localStorage has been reset. Please refresh the page.");
+        window.location.href = "email.html";
+    }
+
+    function scanSingleEmail(emailId) {
+        const email = [...inboxEmails, ...junkEmails].find(e => e.id === emailId);
+        if (!email) return;
+
+        const scanModal = new bootstrap.Modal(document.getElementById("modalScanning"));
+        scanModal.show();
+
+        let progress = 0;
+        const bar = document.getElementById('scanBar');
+        bar.style.width = "0%";
+
+        const interval = setInterval(() => {
+            progress += 20;
+            bar.style.width = progress + "%";
+            if (progress >= 100) {
+                clearInterval(interval);
+                scanModal.hide();
+
+                if (!scannedEmails.includes(email.id)) {
+                    scannedEmails.push(email.id);
+                    localStorage.setItem("scannedEmails", JSON.stringify(scannedEmails));
+                }
+
+                if (email.id === "safe001") {
+                new bootstrap.Modal(document.getElementById("modalSafe")).show();
+                } else {
+                    const container = document.getElementById("suspicious-detail");
+                    container.innerHTML = `
+                      <div class="small">
+                        <div class="mb-2"><strong>Subject:</strong><br>${email.subject}</div>
+                        <div class="mb-2"><strong>From:</strong><br>${email.from}</div>
+                        <div class="mb-2"><strong>Header Analysis:</strong><br>
+                          Domain closely resembles official domain <br>
+                          <code>feather.com</code> vs <code>feather-security.com</code>
+                        </div>
+                        <div class="mb-2"><strong>Body Analysis:</strong><br>
+                          Urgency-based language detected:
+                          <br>“locked out”, “confirm identity”, “within 24 hours”
+                        </div>
+                        <div class="mb-2"><strong>Attachment:</strong><br><code>${email.attachment}</code></div>
+                        <div class="mb-2"><strong>URL Analysis:</strong><br>
+                          Link appears similar to legitimate domain:
+                          <br><code>${email.link}</code>
+                        </div>
+                        <div class="mb-2">
+                          <strong>Phishing Probability:</strong>
+                          <br><span class="text-danger fw-bold fs-5">87%</span>
+                        </div>
+                      </div>
+                    `;
+                    new bootstrap.Modal(document.getElementById("modalSuspicious")).show();
+                }
+            }
+        }, 300);
+    }
+
+    function placeholderReport(emailId) {
+      alert("Please complete the incident report form with relevant details. Your report will be reviewed by the IT team.");
+      localStorage.setItem("incidentTab", "form");
+      window.location.href = "incident_report.html";
+    }
+
+    function showPhishingWarning(emailId) {
+      if (emailId === "phish001") {
+        new bootstrap.Modal(document.getElementById("modalPhishingClick")).show();
+      } else {
+        window.open(inboxEmails.find(e => e.id === emailId)?.link || "#", "_blank");
+      }
+    }
+
+    document.getElementById("trainingRedirectLink").addEventListener("click", function (e) {
+      e.preventDefault();
+      const role = localStorage.getItem("role");
+      const target =
+        role === "it" ? "training_it.html" :
+        role === "manager" ? "training_manager.html" :
+        "training_general.html";
+      window.location.href = target;
+    });
+
+    function handleMenuClick(emailId, realUrl) {
+      const decodedUrl = decodeURIComponent(realUrl);
+      if (emailId === "safe001") {
+        window.open(decodedUrl, "_blank");
+      } else {
+        showPhishingWarning(emailId);
+      }
+    }
+
+    function handleAttachmentClick(emailId) {
+      if (emailId === "phish001") {
+        new bootstrap.Modal(document.getElementById("modalPhishingClick")).show();
+      }
+    }
+</script>
+<script src="common.js"></script>
+</body>
+</html>
