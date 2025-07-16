@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Incident Response</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { height: 100vh; overflow-y: auto; }
+    .sidebar {
+      height: 100vh;
+      background-color: #f8f9fa;
+      padding-top: 1rem;
+    }
+    .sidebar a {
+      display: block;
+      padding: 0.75rem 1.25rem;
+      color: #333;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .sidebar a:hover {
+      background-color: #e9ecef;
+    }
+    .sidebar a.active {
+      background-color: #f8d7da;
+      font-weight: bold;
+      color: #842029;
+    }
+    .content { padding: 2rem; }
+    .card-header { cursor: pointer; }
+  </style>
+</head>
+<body class="d-flex">
+  <nav class="sidebar col-2 border-end">
+    <h5 class="text-center mb-4">📋 Modules</h5>
+    <a href="index.html">🏠 Dashboard</a>
+    <a href="email.html">📧 Email</a>
+    <a id="trainingLink" href="#">🎓 Training</a>
+    <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#incidentSubmenu" role="button" aria-expanded="true">
+      🚨 Incident Response
+      <i class="bi bi-caret-down-fill small"></i>
+    </a>
+    <div class="collapse show ms-3" id="incidentSubmenu">
+      <a href="incident_report.html" onclick="localStorage.setItem('incidentTab', 'form')">📝 Report</a>
+      <a href="incident_report.html" onclick="localStorage.setItem('incidentTab', 'history')">📄 View Reports</a>
+      <a href="incident_response.html" class="active">🧪 Respond</a>
+      <a href="incident_response_track.html">📝 Track (System)</a>
+    </div>
+    <hr>
+    <a href="#" onclick="resetRespond()" class="ms-3 text-danger">🔁 Reset Respond</a>
+  </nav>
+
+  <div class="col-10 content">
+    <h3>🧪 Incident Response Panel</h3>
+    <div id="incidentList" class="mt-4"></div>
+  </div>
+
+  <!-- Email Modal -->
+  <div class="modal fade" id="emailAnalysisModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">System Scan In Progress...</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p>Scanning suspicious links, spoofed headers, and attachments...</p>
+        <div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div></div>
+      </div></div></div>
+  </div>
+
+  <!-- Staff Modal -->
+  <div class="modal fade" id="staffAnalysisModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Analyzing Staff Response...</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p>Reviewing staff behavior and email interactions...</p>
+        <div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div></div>
+      </div></div></div>
+  </div>
+
+  <!-- InfoSec Modal -->
+  <div class="modal fade" id="infosecModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Information Security Check</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div id="infosecEmailDetails" class="border rounded p-3 mb-3 bg-light small"></div>
+        <p>Did the message include internal data?</p>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="dataExposure" id="dataYes" value="yes">
+          <label class="form-check-label" for="dataYes">Yes, it included internal data</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="dataExposure" id="dataNo" value="no">
+          <label class="form-check-label" for="dataNo">No, no internal data included</label>
+        </div>
+        <p class="mt-3">Were there any access control issues?</p>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="accessIssue" id="accessYes" value="yes">
+          <label class="form-check-label" for="accessYes">Yes, permission problems found</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="accessIssue" id="accessNo" value="no">
+          <label class="form-check-label" for="accessNo">No, permission control is normal</label>
+        </div>
+        <div class="text-end mt-3">
+          <button class="btn btn-primary btn-sm" onclick="finalizeInfoSec()">Finish Check</button>
+        </div>
+      </div></div></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+let currentIndex = null;
+
+function formatDisplayTime(isoString) {
+  const d = new Date(isoString);
+  if (isNaN(d)) return "Invalid Time";
+  return d.toLocaleString("en-AU", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function renderIncidents() {
+  let data = JSON.parse(localStorage.getItem("incidentReports") || "[]");
+  const formatTime = (date) => {
+    return date.toLocaleString('en-GB', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).replace(',', '');
+  };
+
+  if (data.length === 0) {
+    data = [
+    {
+        sender: "amadeus@cybersecurity.com",
+        time: new Date("2025-05-19T08:00:00").toISOString(),
+        problem: "phishing",
+        desc: "Received a suspicious login alert.",
+        file: "login_warning.png",
+        autoDetected: false,
+        timestamp: new Date().toISOString(),
+        reply: "",
+        status: "Pending",
+        priority: "2 - High",
+    },
+    { 
+        sender: "System Monitor", 
+        time: new Date("2025-05-18T15:30:00").toISOString(),
+        problem: "malware", 
+        desc: "Unusual process activity detected on bob@cybersecurity.com’s device.", 
+        file: "malware_log.txt", 
+        autoDetected: true, 
+        timestamp: new Date().toISOString(), 
+        reply: "", 
+        status: "Pending" ,
+        priority: "1 - Critical",
+    },
+    ];
+    localStorage.setItem("incidentReports", JSON.stringify(data));
+  }
+
+  const container = document.getElementById("incidentList");
+  container.innerHTML = data.map((r, i) => {
+    const replyContent = r.reply ? r.reply : "The issue has been handled. Please report again if the problem persists.";
+    const isNotified = localStorage.getItem(`notified-${i}`) === "true";
+    let notifyBtn = "";
+
+    if (r.status === "Resolved") {
+      notifyBtn = r.autoDetected
+        ? `<button class="btn btn-outline-secondary btn-sm ms-3" disabled>📨 Assigned to IT Team</button>`
+        : isNotified
+          ? `<button id="notify-btn-${i}" class="btn btn-outline-secondary btn-sm ms-3" disabled>
+              ✅ Notified Reporter
+            </button>`
+          : "";
+    }
+
+    return `
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#incident-${i}">
+          <div>
+            <span class="badge bg-secondary me-2">${r.priority || "?"}</span>
+            ${r.problem} ${r.autoDetected ? "automatically detected by <strong>system</strong>" : `reported by <strong>${r.sender}</strong>`}
+          </div>
+
+          <div class="d-flex align-items-center">
+            ${notifyBtn}
+            <span class="${
+              r.status === "Pending"
+                ? "badge bg-danger fw-bold ms-3"
+                : r.status === "Investigating"
+                ? "badge bg-warning text-dark fw-bold ms-3"
+                : r.status === "Resolved"
+                ? "badge bg-success fw-bold ms-3"
+                : "badge bg-secondary fw-bold ms-3"
+            }">${r.status}</span>
+          </div>
+        </div>
+
+        <div id="incident-${i}" class="collapse">
+          <div class="card-body">
+            <p><strong>Description:</strong> ${r.desc}</p>
+            <p><strong>Attachment:</strong> ${r.file}</p>
+            <div class="border p-3 rounded bg-light">
+              <strong>Email Analysis:</strong>
+              <div id="email-result-${i}">
+                <button class="btn btn-outline-primary btn-sm" onclick="analyzeEmail(${i})">🔍 Analyze Email</button>
+              </div>
+            </div>
+
+            <div class="border p-3 rounded bg-light mt-2">
+              <strong>Staff-related Analysis:</strong>
+              <div id="staff-result-${i}">
+                <button class="btn btn-outline-primary btn-sm" onclick="analyzeStaff(${i})">📊 Analyze Staff Response</button>
+              </div>
+            </div>
+
+            <div class="border p-3 rounded bg-light mt-2">
+              <strong>Information Security:</strong>
+              <div id="infosec-result-${i}">
+                <button class="btn btn-outline-primary btn-sm" onclick="openInfoSec(${i})">🔍 Perform Security Check</button>
+              </div>
+            </div>
+
+            <div class="border p-3 rounded bg-light mt-2" id="legal-result-${i}">
+                <strong>Legal Check:</strong>
+                <p>Evaluate if the email includes threats or false claims.</p>
+                <button class="btn btn-outline-dark btn-sm refer-btn" onclick="referLegal(${i})">Refer to Legal Team</button>
+                <button class="btn btn-outline-success btn-sm mark-btn" onclick="markNoLegalIssue(${i})">Mark No Legal Issue</button>
+                <div id="legal-status-${i}" class="mt-2 text-success"></div>
+            </div>
+            <div class="mt-3">
+                
+              <textarea id="reply-${i}" class="form-control mb-2" rows="2">${replyContent}</textarea>
+              <button class="btn btn-success" onclick="resolveIncident(${i})">Apply Actions & Resolve</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function analyzeEmail(index) {
+  const modal = new bootstrap.Modal(document.getElementById("emailAnalysisModal"));
+  modal.show();
+   setTimeout(() => {
+    modal.hide();
+    document.getElementById(`email-result-${index}`).innerHTML = `
+      <ul>
+        <li>Header Check: sender uses spoofed domain (suspiciouscompany.com)</li>
+        <li>Malicious Links: 2 phishing links detected (bit.ly/fake-login)</li>
+      </ul>
+      <button class="btn btn-outline-danger btn-block-${index} btn-sm me-2" onclick="markEmail(${index}, 'blocked')">Block Sender</button>
+      <button class="btn btn-outline-success btn-safe-${index} btn-sm" onclick="markEmail(${index}, 'safe')">Mark as Safe</button>
+      <p class="mt-2" id="email-status-${index}"></p>
+    `;
+  }, 3500);
+}
+
+function analyzeStaff(index) {
+  currentIndex = index;
+  const modal = new bootstrap.Modal(document.getElementById("staffAnalysisModal"));
+  modal.show();
+  setTimeout(() => {
+    modal.hide();
+    document.getElementById(`staff-result-${index}`).innerHTML = `
+    <p>System detected delivery to 12 employees. 3 clicked the link.</p>
+    <button class="btn btn-outline-warning btn-sm" onclick="warnStaff(${index})">⚠️ Warn Staff</button>
+    <p id="warned-${index}" class="mt-2 text-success" style="display:none;">
+        ✅ All 12 affected employees have been notified via email to remain alert for suspicious activity.
+        <br>
+        The 3 staff members who clicked the phishing link have been scheduled for immediate cybersecurity training.
+    </p>
+    `;
+  }, 3500);
+}
+
+function warnStaff(index) {
+  const button = document.querySelector(`#staff-result-${index} button`);
+  if (button) button.remove(); // remove the warn button
+  document.getElementById(`warned-${index}`).style.display = "block";
+}
+
+function openInfoSec(index) {
+    currentIndex = index;
+    const data = JSON.parse(localStorage.getItem("incidentReports") || "[]");
+    const report = data[index];
+    document.getElementById("infosecEmailDetails").innerHTML = `
+    <p><strong>From:</strong> ${report.sender}<br>
+    <strong>Subject:</strong> URGENT: Your account will be deactivated!<br>
+    <strong>Body:</strong> Please verify your account or it will be disabled.<br>
+    <strong>Link:</strong> http://example-scam-login.com<br>
+    <strong>Attachment:</strong> update_invoice.exe</p>
+    `;
+    const modal = new bootstrap.Modal(document.getElementById("infosecModal"));
+    modal.show();
+}
+
+
+function finalizeInfoSec() {
+  const exposure = document.getElementById("dataYes").checked;
+  const access = document.getElementById("accessYes").checked;
+  const container = document.getElementById(`infosec-result-${currentIndex}`);
+  const modal = bootstrap.Modal.getInstance(document.getElementById("infosecModal"));
+  modal.hide();
+  setTimeout(() => {
+    if (exposure || access) {
+      container.innerHTML = `
+        <p>⚠️ Sensitive internal data exposure found.</p>
+        <button class="btn btn-danger btn-sm" onclick="fixAccess(${currentIndex})">🔧 Apply Access Control Fix</button>
+        <p id="access-fixed-${currentIndex}" class="mt-2 text-success" style="display:none;">✅ Access control issues resolved.</p>
+      `;
+    } else {
+      container.innerHTML = `<p class="text-success">✅ No issue found.</p>`;
+    }
+  }, 300);
+}
+
+function fixAccess(index) {
+  const container = document.getElementById(`infosec-result-${index}`);
+  container.innerHTML = `
+    <div class="mt-2 small text-muted">
+      <p>✔️ Removed phishing email from inbox of 12 affected employees.</p>
+      <p>✔️ Blocked sender domain: <code>suspiciouscompany.com</code></p>
+      <p>✔️ Revoked public sharing permissions of suspicious attachments.</p>
+      <p>✔️ Added phishing domain to company-wide firewall block list.</p>
+    </div>
+    <p class="text-success fw-bold mt-2">✅ Access control issues have been successfully mitigated.</p>
+  `;
+}
+
+
+function markEmail(index, status) {
+  const msg = status === 'blocked'
+    ? "🚫 This sender has been permanently blocked by the company."
+    : "✅ This email was marked as safe.";
+  document.getElementById(`email-status-${index}`).innerText = msg;
+
+  const blockBtn = document.querySelector(`#email-result-${index} .btn-block-${index}`);
+  const safeBtn = document.querySelector(`#email-result-${index} .btn-safe-${index}`);
+
+  if (status === 'blocked') {
+    blockBtn.classList.remove("btn-outline-danger");
+    blockBtn.classList.add("btn-danger");
+    safeBtn.classList.remove("btn-success", "text-white");
+    safeBtn.classList.add("btn-outline-secondary");
+  } else {
+    safeBtn.classList.remove("btn-outline-secondary");
+    safeBtn.classList.add("btn-success", "text-white");
+    blockBtn.classList.remove("btn-danger");
+    blockBtn.classList.add("btn-outline-danger");
+  }
+}
+
+function referLegal(index) {
+  const container = document.getElementById(`legal-status-${index}`);
+  container.innerText = "📨 This incident has been referred to the legal team.";
+
+  const referBtn = document.querySelector(`#legal-result-${index} .refer-btn`);
+  const markBtn = document.querySelector(`#legal-result-${index} .mark-btn`);
+
+  if (referBtn) {
+    referBtn.classList.remove("btn-outline-dark");
+    referBtn.classList.add("btn-dark");
+    referBtn.disabled = true;
+  }
+
+  if (markBtn) {
+    markBtn.classList.remove("btn-success", "text-white");
+    markBtn.classList.add("btn-outline-success");
+  }
+
+  alert("A report has been sent to the legal team for further investigation.");
+}
+
+function markNoLegalIssue(index) {
+  const container = document.getElementById(`legal-status-${index}`);
+  container.innerText = "✅ This email poses no legal concern and requires no further legal review.";
+
+  const referBtn = document.querySelector(`#legal-result-${index} .refer-btn`);
+  const markBtn = document.querySelector(`#legal-result-${index} .mark-btn`);
+
+  if (markBtn) {
+    markBtn.classList.remove("btn-outline-success");
+    markBtn.classList.add("btn-success", "text-white");
+  }
+
+  if (referBtn) {
+    referBtn.classList.remove("btn-dark");
+    referBtn.classList.add("btn-outline-dark");
+    referBtn.disabled = false;
+  }
+}
+
+function resolveIncident(index) {
+  const data = JSON.parse(localStorage.getItem("incidentReports") || "[]");
+  const replyText = document.getElementById(`reply-${index}`).value;
+
+  data[index].status = "Resolved";
+  data[index].reply = replyText;
+
+  localStorage.setItem("incidentReports", JSON.stringify(data));
+  localStorage.setItem(`notified-${index}`, "true");
+
+  if (data[index].autoDetected) {
+    alert("The incident has been resolved. The IT team will continue to monitor and verify whether the issue has been fully addressed or reoccurs.\n\nYou can track follow-up status in the Track section on the left.");
+  } else {
+    alert("The incident has been resolved, and the reporter has been informed of the outcome.");
+  }
+
+  renderIncidents();
+}
+
+function notifyReporter(email, index) {
+    alert(`📤 Notification sent to ${email}`);
+    localStorage.setItem(`notified-${index}`, "true");
+    const btn = document.getElementById(`notify-btn-${index}`);
+    if (btn) {
+    btn.disabled = true;
+    btn.innerText = "✅ Notified Reporter";
+    }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  renderIncidents();
+
+  const reopenedIndex = sessionStorage.getItem("reopenedIndex");
+  if (reopenedIndex !== null) {
+    const collapseTarget = document.getElementById(`incident-${reopenedIndex}`);
+    const cardHeader = collapseTarget?.previousElementSibling;
+
+    if (collapseTarget) {
+        alert("The incident has been reopened. Please continue handling it here.");
+      const bsCollapse = new bootstrap.Collapse(collapseTarget, { toggle: true });
+
+      if (cardHeader) {
+        cardHeader.classList.add("bg-warning", "bg-opacity-25");
+        setTimeout(() => {
+          cardHeader.classList.remove("bg-warning", "bg-opacity-25");
+        }, 3000);
+      }
+
+      collapseTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    sessionStorage.removeItem("reopenedIndex");
+  }
+});
+
+  function resetRespond() {
+    localStorage.removeItem("incidentReports");
+
+    const keys = Object.keys(localStorage);
+    keys.forEach((key) => {
+      if (key.startsWith("notified-")) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    alert("✅ Incident responses have been reset.");
+      location.reload();
+  }
+
+  function getPriorityClass(priority) {
+    if (!priority) return "bg-secondary";
+    if (priority.includes("1")) return "bg-danger";         // Critical
+    if (priority.includes("2")) return "bg-warning text-dark"; // High
+    if (priority.includes("3")) return "bg-info text-dark"; // Moderate
+    if (priority.includes("4")) return "bg-success";        // Low
+    return "bg-secondary";
+  }
+
+  </script>
+  <script src="common.js"></script>
+</body>
+</html>
