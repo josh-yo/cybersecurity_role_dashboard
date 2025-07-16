@@ -200,26 +200,26 @@
   if (!handled.includes("phish001")) {
     inboxEmails = [{
       id: "phish001",
-      from: "it-support@feather-security.com",
+      from: "it-support@cyber-security.com",
       subject: "[ACTION REQUIRED] MFA Reset Request for Your Account",
       attachment: "security_update.pdf",
       reason: "Domain mismatch and social engineering language detected",
-      link: "https://feather-secure.com/auth-reset",
-      body: `Dear FeatherDrive Team,
+      link: "https://cyber-secure.com/auth-reset",
+      body: `Dear Cybersecurity Team,
               We detected a security anomaly during your recent login. As a precaution, we’ve temporarily disabled multi-factor authentication (MFA) on your account.
               To restore full access, please confirm your identity and reset MFA via the secure link below.
               If you do not complete this process within 24 hours, you may be locked out of your dashboard.
-              FeatherDrive Security Team`,
+              Cybersecurity Team`,
     }];
   } else if (!handled.includes("safe001")) {
     inboxEmails = [{
       id: "safe001",
-      from: "hr@feather.com",
+      from: "hr@cybersecurity.com",
       subject: "🎉 End-of-year lunch reminder",
       attachment: "menu.pdf",
       reason: "None",
       body: "Hi team, just a reminder. Please let us know if you're coming to Friday’s lunch at 12PM.",
-      link: "http://intranet.feather.com/lunch"
+      link: "http://intranet.cybersecurity.com/lunch"
     }];
   } else {
     inboxEmails = [];
@@ -295,11 +295,11 @@
         if (reported.includes("phish001")) {
             inboxEmails = [{
                 id: "safe001",
-                from: "hr@feather.com",
+                from: "hr@cybersecurity.com",
                 subject: "🎉 Middle-of-year lunch reminder",
                 attachment: "menu.pdf",
                 reason: "None",
-                link: "http://intranet.feather.com/lunch",
+                link: "http://intranet.cybersecurity.com/lunch",
                 body: `Hi team,
                       <br>
                       <br>
@@ -314,12 +314,12 @@
         } else {
             inboxEmails = [{
                 id: "phish001",
-                from: "it-support@feather-security.com",
+                from: "it-support@cybersecurity-security.com",
                 subject: "[ACTION REQUIRED] MFA Reset Request for Your Account",
                 attachment: "security_update.pdf",
                 reason: "Domain mismatch and social engineering language detected",
-                link: "https://feather-secure.com/auth-reset",
-                body: `Dear FeatherDrive Team,
+                link: "https://cybersecurity-secure.com/auth-reset",
+                body: `Dear Cybersecurity Team,
                       <br>
                       <br>
                       We detected a security anomaly during your recent login.
@@ -332,7 +332,7 @@
                       If you do not complete this process within 24 hours, you may be locked out of your dashboard.
                       <br>
                       <br>
-                      FeatherDrive Security Team`,
+                      Cybersecurity Team`,
             }];
         }
 
@@ -388,7 +388,7 @@
             <div class="mb-2"><strong>From:</strong><br>${email.from}</div>
             <div class="mb-2"><strong>Header Analysis:</strong><br>
               Domain closely resembles official domain <br>
-              <code>feather.com</code> vs <code>feather-security.com</code>
+              <code>cybersecurity.com</code> vs <code>cyber-security.com</code>
             </div>
             <div class="mb-2"><strong>Body Analysis:</strong><br>
               Urgency-based language detected:
@@ -499,7 +499,7 @@
                         <div class="mb-2"><strong>From:</strong><br>${email.from}</div>
                         <div class="mb-2"><strong>Header Analysis:</strong><br>
                           Domain closely resembles official domain <br>
-                          <code>feather.com</code> vs <code>feather-security.com</code>
+                          <code>cybersecurity.com</code> vs <code>cyber-security.com</code>
                         </div>
                         <div class="mb-2"><strong>Body Analysis:</strong><br>
                           Urgency-based language detected:

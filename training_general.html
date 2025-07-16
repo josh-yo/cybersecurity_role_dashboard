@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cybersecurity Training</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body {
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar {
+      height: 100vh;
+      background-color: #f8f9fa;
+      padding-top: 1rem;
+    }
+    .sidebar a {
+      display: block;
+      padding: 0.75rem 1.25rem;
+      color: #333;
+      text-decoration: none;
+    }
+    .sidebar a:hover {
+      background-color: #e9ecef;
+    }
+    .sidebar a.active {
+      background-color: #f8d7da;
+      font-weight: bold;
+      color: #842029;
+    }
+    .training-step {
+      display: none;
+    }
+    .card {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .quiz-option {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="d-flex">
+  <nav class="sidebar col-2 border-end">
+    <h5 class="text-center mb-4">📋 Modules</h5>
+    <a href="index.html">🏠 Dashboard</a>
+    <a href="email.html">📧 Email</a>
+    <a class="d-flex justify-content-between align-items-center"
+      data-bs-toggle="collapse"
+      href="#trainingSubmenu"
+      role="button"
+      aria-expanded="true">
+      🎓 Training
+      <i class="bi bi-caret-down-fill small"></i>
+    </a>
+    <div class="collapse show ms-3 mb-2" id="trainingSubmenu">
+      <a id="trainingLink" href="#">📚 Training & Quiz</a>
+      <a href="training_employee_feedback.html" id="link-training-feedback">🗣️ Feedback</a>
+    </div>
+    <a id="incidentLink" href="#" onclick="showModule('module-incident')">🚨 Incident Response</a>
+    <hr>
+    <button class="btn btn-outline-danger ms-3 me-3 mt-2" onclick="resetTrainingData()">🔄 Reset Training Data</button>
+  </nav>
+
+  <main class="col-10 p-4 overflow-auto">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4>🎓 Cybersecurity Training</h4>
+      <a href="index.html" class="btn btn-outline-secondary btn-sm">🔙 Back to Dashboard</a>
+    </div>
+
+    <div id="training-general" style="display: none;"></div>
+
+    <div id="step-1" class="training-step">
+      <div class="card shadow p-4">
+        <h5>Strong Password Practices</h5>
+        <p>Use at least 10 characters with uppercase, lowercase, numbers, and symbols. Avoid patterns like <code>123456</code>.</p>
+        <p>📺 Learn how to create a strong password in this short video</p>
+        <div class="ratio ratio-16x9">
+            <iframe 
+                src="https://www.youtube.com/embed/0RLH4SNAfjA?si=SgfKqDFOdvnC5qVS&amp;start=15" 
+                title="How To Create A Strong Password" 
+                allowfullscreen>
+            </iframe>
+        </div>
+        <div class="text-end">
+          <button class="btn btn-primary" onclick="showStep(2)" style="margin-top: 2%;">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="step-2" class="training-step">
+      <div class="card shadow p-4">
+        <h5>Identify Phishing Emails</h5>
+        <p>Watch for signs like unknown senders, urgent tone, or strange attachments like <code>.exe</code> files.</p>
+        <img src="https://blog.avast.com/hs-fs/hubfs/suspicious.jpeg?width=2880&name=suspicious.jpeg" class="img-fluid my-3">
+        <div class="text-end">
+          <button class="btn btn-primary" onclick="showStep(3)">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="step-3" class="training-step">
+      <div class="card shadow p-4">
+        <h5>Safe Internet Habits</h5>
+        <p>Avoid logging into company accounts on public Wi-Fi. Always keep your OS and antivirus software updated.</p>
+        <img src="https://i.ibb.co/mFNSY7T1/safe-wifi.png" class="img-fluid my-3 rounded border mx-auto d-block" style="width:75%; height:auto">
+        <div class="text-end">
+          <button class="btn btn-success" onclick="completeTraining()">✅ Complete Training</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="step-complete" class="training-step">
+      <div class="card shadow p-4 text-center border-success">
+        <h5 class="text-success">🎉 Training Completed</h5>
+        <p>Well done! You have completed the cybersecurity training.</p>
+        <p>Take this short quiz to confirm your understanding.</p>
+        <button class="btn btn-outline-primary" onclick="showQuiz()">Start Quiz</button>
+      </div>
+    </div>
+
+    <div id="quiz-section" class="training-step">
+      <div class="card shadow p-4">
+
+        <h5>📝 Training Quiz</h5>
+        <div id="quiz-content">
+            <div class="mb-4">
+                <p><strong>1. Which of the following is a phishing sign?</strong></p>
+                <div class="form-check quiz-option">
+                    <input class="form-check-input" type="radio" name="q1" value="a"> Message from a known company domain with no urgent call to action
+                </div>
+                <div class="form-check quiz-option">
+                    <input class="form-check-input" type="radio" name="q1" value="b"> Unknown sender and urgent message
+                </div>
+            </div>
+            <div class="mb-4">
+                <p><strong>2. Which passwords are strong? (Select all that apply)</strong></p>
+            <div class="form-check quiz-option">
+                <input class="form-check-input" type="checkbox" name="q2" value="a"> 123456
+            </div>
+            <div class="form-check quiz-option">
+                <input class="form-check-input" type="checkbox" name="q2" value="b"> qwe123!@#
+            </div>
+            <div class="form-check quiz-option">
+                <input class="form-check-input" type="checkbox" name="q2" value="c"> LoveYou2020
+            </div>
+            <div class="form-check quiz-option">
+                <input class="form-check-input" type="checkbox" name="q2" value="d"> DX7#ak93z
+            </div>
+            </div>
+
+            <div class="text-end">
+                <button class="btn btn-success" onclick="submitQuiz()">Submit Quiz</button>
+            </div>
+        </div>
+
+
+        <div id="quiz-result" class="mt-4 fw-bold"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const name = localStorage.getItem("displayName");
+  const role = localStorage.getItem("role");
+
+  if (!name || !role) {
+    window.location.href = "mfa.html";
+  }
+
+    if (role === "general") {
+        const quizPassed = localStorage.getItem("quizPassed") === "true";
+
+        if (quizPassed) {
+            showTrainingCompleteCard(100);
+        } else {
+        document.getElementById("training-general").innerHTML = `
+            <div class="card shadow p-4 text-center">
+            <h5>🧑‍💼 General Staff Training</h5>
+            <p>This training includes password safety, phishing awareness, and safe internet practices.</p>
+            <button class="btn btn-primary" onclick="startTraining()">Start Training</button>
+            </div>
+        `;
+        document.getElementById("training-general").style.display = "block";
+        }
+    }
+
+
+  function startTraining() {
+    document.getElementById("training-general").style.display = "none";
+    showStep(1);
+  }
+
+  function showStep(step) {
+    document.querySelectorAll(".training-step").forEach(div => div.style.display = "none");
+    document.getElementById("step-" + step).style.display = "block";
+  }
+
+  function completeTraining() {
+    localStorage.setItem("generalTrainingComplete", "true");
+    showStep("complete");
+  }
+
+  function showQuiz() {
+    document.querySelectorAll(".training-step").forEach(div => div.style.display = "none");
+    document.getElementById("quiz-section").style.display = "block";
+  }
+
+  function submitQuiz() {
+    const q1 = document.querySelector("input[name='q1']:checked")?.value;
+    const q2 = [...document.querySelectorAll("input[name='q2']:checked")].map(cb => cb.value);
+
+    let score = 0;
+    let feedback = [];
+
+    if (q1 === "b") {
+        score++;
+        feedback.push("1. ✅ Correct: Unknown sender is a phishing sign.");
+    } else {
+        feedback.push("1. ❌ Incorrect: The correct answer is 'Unknown sender and urgent message'.");
+    }
+
+    if (q2.includes("b") && q2.includes("d") && q2.length === 2) {
+        score++;
+        feedback.push("2. ✅ Correct: 'qwe123!@#' and 'DX7#ak93z' are strong passwords.");
+    } else {
+        feedback.push("2. ❌ Incorrect: Strong passwords are 'qwe123!@#' and 'DX7#ak93z'.");
+    }
+
+    const percent = (score / 2) * 100;
+    const resultHtml = `
+        <div class="alert alert-info">
+        ${feedback.join("<br>")}
+        <hr>
+        ✅ Final Score: ${score}/2 (${percent}%)<br>
+        ${percent >= 60
+            ? `<button class='btn btn-outline-success mt-3' onclick="location.href='training_feedback_submit.html'">Share your thoughts about this training</button>`
+            : `<button class='btn btn-outline-danger mt-3' onclick='resetQuiz()'>Retake Quiz (Minimum 60% to pass)</button>`
+        }
+        </div>
+    `;
+    
+    if (percent >= 60) {
+        localStorage.setItem("quizPassed", "true");
+        localStorage.setItem("quizScore", percent);
+    }
+    if (percent >= 60) {
+        localStorage.setItem("quizPassed", "true");
+    }
+    document.getElementById("quiz-content").style.display = "none";
+    document.getElementById("quiz-result").innerHTML = resultHtml;
+    }
+
+    function resetQuiz() {
+        document.querySelectorAll(".training-step").forEach(div => div.style.display = "none");
+        document.getElementById("quiz-section").style.display = "block";
+        document.getElementById("quiz-content").style.display = "block";
+
+        document.querySelectorAll("input[name='q1']").forEach(el => el.checked = false);
+        document.querySelectorAll("input[name='q2']").forEach(el => el.checked = false);
+        document.getElementById("quiz-result").innerHTML = "";
+    }
+
+  function showTrainingCompleteCard(scorePercent) {
+    document.querySelectorAll(".training-step").forEach(div => div.style.display = "none");
+    document.getElementById("training-general").innerHTML = `
+      <div class="card shadow p-4 text-center">
+        <h5 class="text-success">✅ You have completed the General Staff Training</h5>
+        <p class="mt-3">Your training progress is complete.</p>
+        <div class="progress mb-3" style="height: 20px;">
+          <div class="progress-bar bg-success" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">100% Complete</div>
+        </div>
+        <p class="fw-bold">Quiz Score: ${scorePercent}%</p>
+      </div>
+    `;
+    document.getElementById("training-general").style.display = "block";
+  }
+
+  function resetTrainingData() {
+      localStorage.removeItem("quizPassed");
+      localStorage.removeItem("quizScore");
+      alert("✅ Training test data has been reset. Please refresh the page.");
+      window.location.reload();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("trainingLink")?.classList.add("active");
+  });
+
+</script>
+<script src="common.js"></script>
+</body>
+</html>

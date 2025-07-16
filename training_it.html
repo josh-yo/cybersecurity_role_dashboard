@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cybersecurity Training (IT)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body {
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar {
+      height: 100vh;
+      background-color: #f8f9fa;
+      padding-top: 1rem;
+    }
+    .sidebar a {
+      display: block;
+      padding: 0.75rem 1.25rem;
+      color: #333;
+      text-decoration: none;
+    }
+    .sidebar a:hover {
+      background-color: #e9ecef;
+    }
+    .sidebar a.active {
+      background-color: #f8d7da;
+      font-weight: bold;
+      color: #842029;
+    }
+    .training-step {
+      display: none;
+    }
+    .card {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+<div class="d-flex">
+  <nav class="sidebar col-2 border-end">
+    <h5 class="text-center mb-4">📋 Modules</h5>
+    <a href="index.html">🏠 Dashboard</a>
+    <a href="email.html">📧 Email</a>
+    <a class="d-flex justify-content-between align-items-center"
+      data-bs-toggle="collapse"
+      href="#trainingSubmenu"
+      role="button"
+      aria-expanded="true">
+      🎓 Training
+      <i class="bi bi-caret-down-fill small"></i>
+    </a>
+    <div class="collapse show ms-3 mb-2" id="trainingSubmenu">
+      <a id="trainingLink" href="#">📚 Training & Quiz</a>
+      <a href="training_employee_feedback.html" id="link-training-feedback">🗣️ Feedback</a>
+    </div>
+    <a id="incidentLink" href="#" onclick="showModule('module-incident')">🚨 Incident Response</a>
+    <hr>
+    <button class="btn btn-outline-danger ms-3 me-3 mt-2" onclick="resetTrainingData()">🔄 Reset Training Data</button>
+  </nav>
+
+  <main class="col-10 p-4 overflow-auto">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4>🎓 Cybersecurity Training</h4>
+    </div>
+
+    <div id="training-start" class="card shadow p-4">
+      <h5>👨‍💻 IT Training Overview</h5>
+      <p>This course covers advanced phishing, secure authentication, and admin best practices.</p>
+      <button class="btn btn-primary" onclick="startTraining()">Start Training</button>
+    </div>
+
+    <div id="step-1" class="training-step">
+      <div class="card shadow p-4">
+        <h5>Advanced Phishing Tactics</h5>
+        <p>Learn to recognize spear phishing, domain spoofing, and Business Email Compromise (BEC) attacks.</p>
+        <div class="ratio ratio-16x9">
+          <iframe src="https://www.youtube.com/embed/YNIdo7TWckw?si=c1-DZJzJUjwF9AEJ&start=8" title="Business Email Compromise Case Study" allowfullscreen></iframe>
+        </div>
+        <div class="text-end">
+          <button class="btn btn-primary mt-3" onclick="showStep(2)">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="step-2" class="training-step">
+      <div class="card shadow p-4">
+        <h5>Secure Authentication Practices</h5>
+        <p>Use MFA, strong identity management, and avoid insecure channels. Prioritize authenticator apps over SMS/email.</p>
+        <div class="ratio ratio-16x9">
+          <iframe src="https://www.youtube.com/embed/9rLixFB6YsI?si=lHqAq67ch2nWUgRt" title="What is MFA?" allowfullscreen></iframe>
+        </div>
+        <div class="text-end">
+          <button class="btn btn-primary mt-3" onclick="showStep(3)">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="step-3" class="training-step">
+      <div class="card shadow p-4">
+        <h5>Admin Security Best Practices</h5>
+        <p>Learn how patching, using strong keys, disabling root access, and restricting login methods reduce risk.</p>
+        <div class="ratio ratio-16x9">
+          <iframe src="https://www.youtube.com/embed/l1iu3iZq1aQ?si=tqwO7MCbn0R7Sogm" title="Secure SSH" allowfullscreen></iframe>
+        </div>
+        <div class="text-end">
+          <button class="btn btn-success mt-3" onclick="completeTraining()">✅ Complete Training</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="step-complete" class="training-step">
+      <div class="card shadow p-4 text-center border-success">
+        <h5 class="text-success">🎉 Training Completed</h5>
+        <p>Take this short quiz to verify your understanding.</p>
+        <button class="btn btn-outline-primary" onclick="showQuiz()">Start Quiz</button>
+      </div>
+    </div>
+
+    <div id="quiz-section" class="training-step">
+      <div class="card shadow p-4">
+        <h5>📝 IT Training Quiz</h5>
+        <form id="quizForm">
+          <p><strong>1. Which is a sign of spear phishing?</strong></p>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="q1" value="a"> Sent to many recipients
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="q1" value="b"> Uses personal info to gain trust
+          </div>
+
+          <p class="mt-4"><strong>2. What are secure admin practices? (Select all that apply)</strong></p>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="q2" value="a"> Share credentials by email
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="q2" value="b"> Use MFA for admin accounts
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="q2" value="c"> Regularly apply security patches
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="q2" value="d"> Use strong SSH keys
+          </div>
+
+          <div class="text-end mt-4">
+            <button type="button" class="btn btn-success" onclick="submitQuiz()">Submit Quiz</button>
+          </div>
+        </form>
+        <div id="quiz-result" class="mt-4 fw-bold"></div>
+      </div>
+    </div>
+
+    <div id="training-summary" class="training-step"></div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    const name = localStorage.getItem("displayName");
+    const role = localStorage.getItem("role");
+
+    if (!name || !role) {
+      window.location.href = "mfa.html";
+      return;
+    }
+
+    const quizPassed = localStorage.getItem("quizPassed") === "true";
+
+    if (role === "it" && quizPassed) {
+        showTrainingCompleteCard(localStorage.getItem("quizScore") || 100);
+      }
+  });
+
+  function startTraining() {
+    document.getElementById("training-start").style.display = "none";
+    showStep(1);
+  }
+
+  function showStep(step) {
+    document.querySelectorAll(".training-step").forEach(div => div.style.display = "none");
+    document.getElementById("step-" + step).style.display = "block";
+  }
+
+  function completeTraining() {
+    showStep("complete");
+  }
+
+  function showQuiz() {
+    document.querySelectorAll(".training-step").forEach(div => div.style.display = "none");
+    document.getElementById("quiz-section").style.display = "block";
+  }
+
+  function submitQuiz() {
+    const q1 = document.querySelector("input[name='q1']:checked")?.value;
+    const q2 = [...document.querySelectorAll("input[name='q2']:checked")].map(cb => cb.value);
+
+    let score = 0;
+    let feedback = [];
+
+    if (q1 === "b") {
+      score++;
+      feedback.push("1. ✅ Correct: Uses personal info to gain trust.");
+    } else {
+      feedback.push("1. ❌ Incorrect: The correct answer is 'Uses personal info to gain trust'.");
+    }
+
+    const isQ2Correct = q2.includes("b") && q2.includes("c") && q2.includes("d") && q2.length === 3;
+    if (isQ2Correct) {
+      score++;
+      feedback.push("2. ✅ Correct: MFA, patches, and SSH keys are secure admin practices.");
+    } else {
+      feedback.push("2. ❌ Incorrect: Correct answers are MFA, patches, and SSH keys.");
+    }
+
+    const percent = (score / 2) * 100;
+    const resultHtml = `
+        <div class="alert alert-info">
+        ${feedback.join("<br>")}
+        <hr>
+        ✅ Final Score: ${score}/2 (${percent}%)<br>
+        ${percent >= 60
+            ? `<button class='btn btn-outline-success mt-3' onclick="location.href='training_feedback_submit.html'">Share your thoughts about this training</button>`
+            : `<button class='btn btn-outline-danger mt-3' onclick='resetQuiz()'>Retake Quiz (Minimum 60% to pass)</button>`
+        }
+        </div>
+    `;
+
+    if (percent >= 60) {
+      localStorage.setItem("quizPassed", "true");
+      localStorage.setItem("quizScore", percent);
+    }
+
+    document.getElementById("quizForm").style.display = "none";
+    document.getElementById("quiz-result").innerHTML = resultHtml;
+  }
+
+  function resetQuiz() {
+    document.querySelectorAll(".training-step").forEach(div => div.style.display = "none");
+    document.getElementById("quiz-section").style.display = "block";
+    document.getElementById("quizForm").style.display = "block";
+    document.getElementById("quizForm").reset();
+    document.getElementById("quiz-result").innerHTML = "";
+  }
+
+  function showTrainingCompleteCard(scorePercent) {
+    document.querySelectorAll(".training-step").forEach(div => div.style.display = "none");
+    document.getElementById("training-start").style.display = "none";
+    document.getElementById("training-summary").innerHTML = `
+      <div class="card shadow p-4 text-center">
+        <h5 class="text-success">✅ You have completed the IT Staff Training</h5>
+        <p class="mt-3">Your training progress is complete.</p>
+        <div class="progress mb-3" style="height: 20px;">
+          <div class="progress-bar bg-success" role="progressbar" style="width: ${scorePercent}%" aria-valuenow="${scorePercent}" aria-valuemin="0" aria-valuemax="100">${scorePercent}% Complete</div>
+        </div>
+        <p class="fw-bold">Quiz Score: ${scorePercent}%</p>
+      </div>`;
+    document.getElementById("training-summary").style.display = "block";
+  }
+
+  function resetTrainingData() {
+    localStorage.removeItem("quizPassed");
+    localStorage.removeItem("quizScore");
+    alert("✅ Training test data has been reset. Please refresh the page.");
+    window.location.reload();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("trainingLink")?.classList.add("active");
+  });
+
+</script>
+<script src="common.js"></script>
+</body>
+</html>
