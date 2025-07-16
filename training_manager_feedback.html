@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Training Feedback</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar {
+      height: 100vh;
+      background-color: #f8f9fa;
+      padding-top: 1rem;
+    }
+    .sidebar a {
+      display: block;
+      padding: 0.75rem 1.25rem;
+      color: #333;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .sidebar a:hover {
+      background-color: #e9ecef;
+    }
+    .sidebar a.active {
+      background-color: #f8d7da;
+      font-weight: bold;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+<div class="d-flex">
+  <nav class="sidebar col-2 border-end d-flex flex-column">
+    <h5 class="text-center mb-3">📋 Modules</h5>
+    <a href="index.html">🏠 Dashboard</a>
+    <a href="email.html">📧 Email</a>
+    <a class="d-flex justify-content-between align-items-center"
+        data-bs-toggle="collapse"
+        href="#trainingSubmenu"
+        role="button"
+        aria-expanded="true">
+        🎓 Training
+        <i class="bi bi-caret-down-fill small"></i>
+    </a>
+    <div class="collapse show ms-3 mb-2" id="trainingSubmenu">
+        <a href="training_manager.html">📋 Overview</a>
+        <a href="training_manager_feedback.html" id="link-training-feedback">🗣️ Feedback</a>
+    </div>
+    <a id="incidentLink" href="#" onclick="showModule('module-incident')">🚨 Incident Response</a>
+    <hr>
+    <button class="btn btn-outline-danger ms-3 me-3 mt-2" onclick="resetFeedbackData()">🔄 Reset Feedback Data</button>
+  </nav>
+
+  <main class="col-10 p-4 overflow-auto">
+    <div class="container-fluid">
+      <h3 class="mb-4">🗣️ Training Feedback</h3>
+
+      <h5 class="mb-3">❗ Unreplied</h5>
+      <div id="unrepliedList" class="row gy-3 mb-5"></div>
+
+      <h5 class="mb-2">✅ Replied</h5>
+      <div id="repliedList" class="accordion" id="repliedAccordion"></div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const LOCAL_STORAGE_KEY = "employeeFeedbacks";
+
+  const defaultFeedbacks = [
+    {
+      name: "Amadeus",
+      content: "It would help if the videos had subtitles or transcripts.",
+      timestamp: "2025-05-17 15:42",
+      reply: "",
+      replyTime: "",
+      defaultReply: "We appreciate your feedback. We’ll explore adding subtitles or transcripts to improve accessibility."
+    },
+    {
+      name: "Jane",
+      content: "It’s great that our team is taking cybersecurity seriously now!",
+      timestamp: "2025-05-17 17:20",
+      reply: "",
+      replyTime: "",
+      defaultReply: "Thank you! It’s great to know the training is making a positive impact."
+    }
+  ];
+
+  function loadFeedbacks() {
+    let stored = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+    if (stored.length === 0) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(defaultFeedbacks));
+      stored = [...defaultFeedbacks];
+    }
+    return stored;
+  }
+
+  function saveFeedbacks(data) {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function renderFeedbacks() {
+    const feedbacks = loadFeedbacks();
+    const unreplied = document.getElementById("unrepliedList");
+    const replied = document.getElementById("repliedList");
+
+    unreplied.innerHTML = "";
+    replied.innerHTML = "";
+    let hasUnreplied = false;
+    let hasReplied = false;
+
+    feedbacks.forEach((fb, index) => {
+      if (!fb.reply) {
+        hasUnreplied = true;
+        const col = document.createElement("div");
+        col.className = "col-md-6";
+        col.innerHTML = `
+          <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column justify-content-between">
+              <h5 class="card-title">${fb.name}</h5>
+              <p class="card-text mb-1">${fb.content}</p>
+              <p class="text-muted small">🕒 ${fb.timestamp}</p>
+              <textarea class="form-control mb-2" rows="2" placeholder="Write a reply..." id="reply-${index}"></textarea>
+              <button class="btn btn-sm btn-primary" onclick="saveReply(${index})">Reply</button>
+            </div>
+          </div>`;
+        unreplied.appendChild(col);
+      } else {
+        hasReplied = true;
+        const item = document.createElement("div");
+        item.className = "accordion-item";
+        const displayReply = fb.reply || fb.defaultReply;
+        const displayTime = fb.replyTime ? `<p class="text-muted small mb-0">🕒 Replied on ${fb.replyTime}</p>` : "";
+
+        item.innerHTML = `
+          <h2 class="accordion-header" id="heading-${index}">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${index}" aria-expanded="false" aria-controls="collapse-${index}">
+              ${fb.name} - ${fb.timestamp}
+            </button>
+          </h2>
+          <div id="collapse-${index}" class="accordion-collapse collapse" aria-labelledby="heading-${index}" data-bs-parent="#repliedAccordion">
+            <div class="accordion-body">
+              <p><strong>Feedback:</strong><br>${fb.content}</p>
+              <p class="mb-1"><strong>Reply:</strong><br>${displayReply}</p>
+              ${displayTime}
+            </div>
+          </div>`;
+        replied.appendChild(item);
+      }
+    });
+
+    if (!hasUnreplied) {
+      unreplied.innerHTML = `<p class="text-muted fst-italic mt-4 ps-2">No pending feedback</p>`;
+    }
+
+    if (!hasReplied) {
+      replied.innerHTML = `<p class="text-muted fst-italic mt-4 ps-2">No feedback has been replied yet</p>`;
+    }
+  }
+
+  function saveReply(index) {
+    const feedbacks = loadFeedbacks();
+    const textarea = document.getElementById(`reply-${index}`);
+    const replyText = textarea.value.trim();
+
+    if (!replyText) return;
+
+    feedbacks[index].reply = replyText;
+    feedbacks[index].replyTime = new Date().toLocaleString();
+    saveFeedbacks(feedbacks);
+    renderFeedbacks();
+  }
+
+  function resetFeedbackData() {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    alert("Feedback data has been cleared.");
+    location.reload();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("link-training-feedback")?.classList.add("active");
+    renderFeedbacks();
+  });
+
+</script>
+<script src="common.js"></script>
+
+</body>
+</html>
